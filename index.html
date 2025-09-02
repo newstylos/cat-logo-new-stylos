@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>New Stylos Camisetas - Catálogo Online</title>
-    <script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=Fxa3tC4PtCN3K88ocu_rU1m3eTVL-hHeP3rk5Xm6zYKjNS_iIcsFUlYzITDAXtPaOPOiALRhjxQv9yB9v3x9pNw4Fma7X8ZbsSVmM2pmTeFNLu2EmOFyGVbxRn0jmBKV1mTb5LzCMC7TM7Bavkm4asYxdkUQnW0BSLq0z0r5jxnxLHBfDVFWLjsFJmCTXJT4lpsXWPV9JjKF-adweCuLkpTbIETG8gtFyd5LaabT2edL_bm9-HCG7KM_HXI_DMIJr7USI4nXH_RdxSZvNGb_tb_-DYjqqw2hTdAlCp8oYUkuEU7tThzQHNFjNubHolmWc9ogEfrO5DxIlqCFMYt52PV7V7C3NYH6irK3pBsSN7BU5Kjxp8mHvAuTg0SEtEkvtnZN84LmGUq6mFlULlx7xOodfysKMEce2MpkqujGNTBCM2C20CCrLiXBkpl2GDhllKDFybo0c7lbxBt2dQPyl1rJBSnna9bkiHKVJ2imkqop323j2gKDhcGaz2rzTtRIT_2b_tY7OQKQwxdxcVfX4t1Swl_0FA6hVQaKI5cjXTH3CEUZLjCjRyrlDyOCERhBIU8EbfCY4hfhWdJtKQtWktRukgZ8DlMLzOCCKMQiG9HIgCKWOME29EXKCw6G336t" charset="UTF-8"></script><style>
+    <style>
         * {
             margin: 0;
             padding: 0;
@@ -498,6 +498,23 @@
             padding: 40px 20px;
         }
 
+        .auth-status {
+            background: rgba(40, 167, 69, 0.1);
+            border: 2px solid #28a745;
+            color: #155724;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: none;
+        }
+
+        .auth-status.active {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
         @media (max-width: 768px) {
             .header h1 {
                 font-size: 2rem;
@@ -531,6 +548,9 @@
 
     <div class="controls">
         <div class="admin-controls">
+            <div class="auth-status" id="authStatus">
+                🔓 Modo Gerente Ativo
+            </div>
             <button class="btn btn-success" onclick="toggleAdminPanel()">
                 ⚙️ Gerenciar Produtos
             </button>
@@ -539,6 +559,9 @@
             </button>
             <button class="btn" style="background: #25d366;" onclick="toggleWhatsAppConfig()">
                 📱 Configurar WhatsApp
+            </button>
+            <button class="btn btn-danger" onclick="logout()" id="logoutBtn" style="display: none;">
+                🔒 Sair
             </button>
         </div>
         
@@ -682,6 +705,7 @@
 
         let cart = [];
         let editingProductId = null;
+        let isAuthenticated = false;
         
         // Configurações do WhatsApp (podem ser editadas pelo usuário)
         let whatsappConfig = {
@@ -689,6 +713,55 @@
             pixKey: '00.000.000/0001-00',
             pixName: 'New Stylos Camisetas'
         };
+
+        // Senha do gerente (pode ser alterada aqui)
+        const MANAGER_PASSWORD = 'gerente123';
+
+        // Verificar senha do gerente
+        function checkManagerPassword() {
+            if (isAuthenticated) {
+                return true;
+            }
+            
+            const password = prompt('🔐 Digite a senha do gerente:\n\n(Senha padrão: gerente123)');
+            if (password === MANAGER_PASSWORD) {
+                isAuthenticated = true;
+                updateAuthStatus();
+                alert('✅ Acesso liberado! Você pode gerenciar os produtos.');
+                return true;
+            } else if (password !== null) {
+                alert('❌ Senha incorreta! Apenas o gerente pode editar produtos.');
+            }
+            return false;
+        }
+
+        // Atualizar status de autenticação
+        function updateAuthStatus() {
+            const authStatus = document.getElementById('authStatus');
+            const logoutBtn = document.getElementById('logoutBtn');
+            
+            if (isAuthenticated) {
+                authStatus.classList.add('active');
+                logoutBtn.style.display = 'flex';
+            } else {
+                authStatus.classList.remove('active');
+                logoutBtn.style.display = 'none';
+            }
+        }
+
+        // Logout
+        function logout() {
+            if (confirm('Deseja sair do modo gerente?')) {
+                isAuthenticated = false;
+                updateAuthStatus();
+                
+                // Fechar painéis administrativos
+                document.getElementById('adminPanel').classList.remove('active');
+                document.getElementById('whatsappPanel').classList.remove('active');
+                
+                alert('🔒 Você saiu do modo gerente.');
+            }
+        }
 
         // Carregar produtos na tela
         function loadProducts() {
@@ -710,13 +783,23 @@
                 `<img src="${product.images[0]}" alt="${product.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 13px;">` :
                 `<div>📷<br><strong>${product.name}</strong><br>Clique para adicionar foto</div>`;
             
+            // Mostrar botões de edição apenas se autenticado
+            const adminButtons = isAuthenticated ? `
+                <div style="margin-top: 15px; display: flex; gap: 10px;">
+                    <button class="btn btn-warning" style="flex: 1; padding: 8px;" onclick="editProduct(${product.id})">
+                        ✏️ Editar
+                    </button>
+                    <button class="btn btn-danger" style="flex: 1; padding: 8px;" onclick="deleteProduct(${product.id})">
+                        🗑️ Excluir
+                    </button>
+                </div>
+            ` : '';
+            
             card.innerHTML = `
                 <div class="product-image-container">
                     <div class="main-image ${product.images[0] ? 'has-image' : ''}" onclick="selectMainImage(${product.id}, 0)">
                         ${mainImageContent}
-                        <button class="image-upload-btn" onclick="event.stopPropagation(); uploadImage(${product.id}, 0)">
-                            📷 Foto
-                        </button>
+                        ${isAuthenticated ? `<button class="image-upload-btn" onclick="event.stopPropagation(); uploadImage(${product.id}, 0)">📷 Foto</button>` : ''}
                     </div>
                     <div class="image-thumbnails">
                         ${product.images.map((img, index) => {
@@ -770,14 +853,7 @@
                     🛒 Adicionar ao Carrinho
                 </button>
                 
-                <div style="margin-top: 15px; display: flex; gap: 10px;">
-                    <button class="btn btn-warning" style="flex: 1; padding: 8px;" onclick="editProduct(${product.id})">
-                        ✏️ Editar
-                    </button>
-                    <button class="btn btn-danger" style="flex: 1; padding: 8px;" onclick="deleteProduct(${product.id})">
-                        🗑️ Excluir
-                    </button>
-                </div>
+                ${adminButtons}
             `;
             return card;
         }
@@ -1068,12 +1144,16 @@
 
         // Toggle painel admin
         function toggleAdminPanel() {
+            if (!checkManagerPassword()) return;
+            
             const adminPanel = document.getElementById('adminPanel');
             adminPanel.classList.toggle('active');
         }
 
         // Adicionar novo produto
         function addNewProduct() {
+            if (!checkManagerPassword()) return;
+            
             editingProductId = null;
             document.getElementById('productForm').reset();
             document.getElementById('adminPanel').classList.add('active');
@@ -1081,6 +1161,8 @@
 
         // Editar produto
         function editProduct(productId) {
+            if (!checkManagerPassword()) return;
+            
             const product = products.find(p => p.id === productId);
             editingProductId = productId;
             
@@ -1095,6 +1177,8 @@
 
         // Funções para gerenciar imagens
         function uploadImage(productId, imageIndex) {
+            if (!checkManagerPassword()) return;
+            
             const input = document.getElementById(`upload-${productId}-${imageIndex}`);
             if (input) {
                 input.click();
@@ -1140,13 +1224,15 @@
         function selectMainImage(productId, imageIndex) {
             const product = products.find(p => p.id === productId);
             if (!product || !product.images[imageIndex]) {
-                // Se não há imagem, abrir upload
-                uploadImage(productId, imageIndex);
+                // Se não há imagem, abrir upload (apenas se autenticado)
+                if (isAuthenticated) {
+                    uploadImage(productId, imageIndex);
+                }
                 return;
             }
 
-            // Trocar imagem principal
-            if (imageIndex !== 0) {
+            // Trocar imagem principal (apenas se autenticado)
+            if (isAuthenticated && imageIndex !== 0) {
                 const temp = product.images[0];
                 product.images[0] = product.images[imageIndex];
                 product.images[imageIndex] = temp;
@@ -1197,6 +1283,8 @@
 
         // Excluir produto
         function deleteProduct(productId) {
+            if (!checkManagerPassword()) return;
+            
             if (confirm('Tem certeza que deseja excluir este produto?')) {
                 products = products.filter(p => p.id !== productId);
                 loadProducts();
@@ -1206,6 +1294,8 @@
 
         // Toggle painel WhatsApp
         function toggleWhatsAppConfig() {
+            if (!checkManagerPassword()) return;
+            
             const whatsappPanel = document.getElementById('whatsappPanel');
             const adminPanel = document.getElementById('adminPanel');
             
@@ -1253,8 +1343,6 @@
             document.getElementById('whatsappPanel').classList.remove('active');
         }
 
-
-
         // Inicializar aplicação
         window.addEventListener('load', function() {
             // Carregar configurações salvas do localStorage
@@ -1266,6 +1354,7 @@
             loadProducts();
             updateCartBadge();
             updateCartContent();
+            updateAuthStatus();
         });
 
         // Fechar carrinho ao clicar fora
@@ -1278,5 +1367,5 @@
             }
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9764d51cd4a7f1e1',t:'MTc1NjM5NDg0My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'978edf1695ede638',t:'MTc1NjgzNTY1NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
