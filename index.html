@@ -368,10 +368,6 @@
             display: none;
         }
 
-        .admin-panel.active {
-            display: block;
-        }
-
         .form-group {
             margin-bottom: 20px;
         }
@@ -834,7 +830,7 @@
                 return true;
             }
             
-            const password = prompt('🔐 Digite a senha do gerente:\n\n(Senha padrão: newsylos)');
+            const password = prompt('🔐 Digite a senha do gerente:\n\n(Senha padrão: newstylos)');
             if (password === MANAGER_PASSWORD) {
                 isAuthenticated = true;
                 updateAuthStatus();
@@ -1174,6 +1170,13 @@
                         <p style="font-size: 0.9rem; margin-top: 10px;">Adicione produtos para começar!</p>
                     </div>
                 `;
+                
+                // Habilitar/desabilitar botão de finalizar
+                const finalizeBtn = document.getElementById('finalizeBtn');
+                if (finalizeBtn) {
+                    finalizeBtn.disabled = true;
+                    finalizeBtn.style.opacity = '0.6';
+                }
                 return;
             }
 
@@ -1244,7 +1247,7 @@
                     </div>
                 </div>
                 
-                <button class="whatsapp-btn" onclick="sendWhatsAppOrder()" id="finalizeBtn" disabled style="opacity: 0.6;">
+                <button class="whatsapp-btn" onclick="sendWhatsAppOrder()" id="finalizeBtn" ${cart.reduce((sum, item) => sum + item.quantity, 0) >= 10 ? '' : 'disabled'} style="opacity: ${cart.reduce((sum, item) => sum + item.quantity, 0) >= 10 ? '1' : '0.6'};">
                     📱 Finalizar Pedido Atacado
                 </button>
                 <button class="btn btn-danger" style="width: 100%; margin-top: 10px;" onclick="clearCart()">
@@ -1285,12 +1288,14 @@
             const totalPieces = cart.reduce((sum, item) => sum + item.quantity, 0);
             const finalizeBtn = document.getElementById('finalizeBtn');
             
-            if (totalPieces >= 10) {
-                finalizeBtn.disabled = false;
-                finalizeBtn.style.opacity = '1';
-            } else {
-                finalizeBtn.disabled = true;
-                finalizeBtn.style.opacity = '0.6';
+            if (finalizeBtn) {
+                if (totalPieces >= 10) {
+                    finalizeBtn.disabled = false;
+                    finalizeBtn.style.opacity = '1';
+                } else {
+                    finalizeBtn.disabled = true;
+                    finalizeBtn.style.opacity = '0.6';
+                }
             }
             
             // Atualizar visual das opções
@@ -1387,7 +1392,13 @@
         // Toggle carrinho
         function toggleCart() {
             const cartSidebar = document.getElementById('cartSidebar');
-            cartSidebar.classList.toggle('active');
+            if (cartSidebar.classList.contains('active')) {
+                cartSidebar.classList.remove('active');
+            } else {
+                cartSidebar.classList.add('active');
+                // Atualizar conteúdo do carrinho ao abrir
+                updateCartContent();
+            }
         }
 
         // Toggle painel de gerenciamento
@@ -1395,7 +1406,7 @@
             if (!checkManagerPassword()) return;
             
             const managementPanel = document.getElementById('managementPanel');
-            managementPanel.classList.toggle('active');
+            managementPanel.style.display = managementPanel.style.display === 'block' ? 'none' : 'block';
             
             // Atualizar informações do sistema
             updateSystemInfo();
@@ -1404,7 +1415,7 @@
         // Fechar painel de gerenciamento
         function closeManagementPanel() {
             const managementPanel = document.getElementById('managementPanel');
-            managementPanel.classList.remove('active');
+            managementPanel.style.display = 'none';
         }
 
         // Trocar aba
@@ -1497,7 +1508,7 @@
             document.getElementById('productColors').value = product.colors.join(',');
             
             // Abrir painel de gerenciamento na aba produtos
-            document.getElementById('managementPanel').classList.add('active');
+            document.getElementById('managementPanel').style.display = 'block';
             switchTab('products');
             
             // Mostrar formulário de edição
@@ -1805,5 +1816,5 @@
             }
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'978f406b2029e638',t:'MTc1NjgzOTY0MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'978f4c74157e0353',t:'MTc1Njg0MDEzNC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
