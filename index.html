@@ -13,19 +13,21 @@
 
         body {
             font-family: 'Arial', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #ffffff;
             min-height: 100vh;
             padding: 20px;
+            color: #000000;
         }
 
         .header {
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-            color: white;
+            background: #ffffff;
+            color: #000000;
             padding: 30px;
             text-align: center;
             border-radius: 15px;
             margin-bottom: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border: 2px solid #e9ecef;
         }
 
         .header h1 {
@@ -515,6 +517,17 @@
             gap: 8px;
         }
 
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
         @media (max-width: 768px) {
             .header h1 {
                 font-size: 2rem;
@@ -544,6 +557,14 @@
     <div class="header">
         <h1>👕 New Stylos Camisetas</h1>
         <p>Catálogo Online - Qualidade Premium com Preços Justos</p>
+        <div style="background: rgba(52, 144, 220, 0.15); border: 2px solid #3490dc; border-radius: 10px; padding: 15px; margin-top: 20px; color: #2c5aa0;">
+            <div style="font-weight: 600; font-size: 1.1rem; margin-bottom: 8px;">📦 VENDAS SOMENTE NO ATACADO</div>
+            <div style="font-size: 0.95rem;">
+                ✅ Pedido mínimo: <strong>10 peças</strong><br>
+                ✅ Peças podem ser <strong>variadas</strong> (tamanhos e cores diferentes)<br>
+                ✅ Entrega para todo o Brasil
+            </div>
+        </div>
     </div>
 
     <div class="controls">
@@ -706,6 +727,7 @@
         let cart = [];
         let editingProductId = null;
         let isAuthenticated = false;
+        let reminderTimers = [];
         
         // Configurações do WhatsApp (podem ser editadas pelo usuário)
         let whatsappConfig = {
@@ -723,7 +745,7 @@
                 return true;
             }
             
-            const password = prompt('🔐 Digite a senha do gerente:\n\n(Senha padrão: newstylos2010@)');
+            const password = prompt('🔐 Digite a senha do gerente:\n\n(Senha padrão: STYLOS2010)');
             if (password === MANAGER_PASSWORD) {
                 isAuthenticated = true;
                 updateAuthStatus();
@@ -925,6 +947,9 @@
             updateCartBadge();
             updateCartContent();
             
+            // Configurar lembrete de carrinho abandonado
+            setupCartAbandonedReminder();
+            
             // Feedback visual
             const btn = event.target;
             const originalText = btn.textContent;
@@ -935,6 +960,111 @@
                 btn.textContent = originalText;
                 btn.style.background = '#28a745';
             }, 1500);
+        }
+
+        // Sistema de lembretes automáticos
+        function setupCartAbandonedReminder() {
+            // Limpar timers anteriores
+            reminderTimers.forEach(timer => clearTimeout(timer));
+            reminderTimers = [];
+            
+            if (cart.length > 0) {
+                // Primeiro lembrete - 12 horas
+                const reminder1 = setTimeout(() => {
+                    if (cart.length > 0 && !hasUserMadeOrder()) {
+                        showCartReminderNotification();
+                    }
+                }, 12 * 60 * 60 * 1000); // 12 horas
+                
+                reminderTimers.push(reminder1);
+            }
+        }
+
+        // Mostrar notificação de carrinho abandonado
+        function showCartReminderNotification() {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+                color: white;
+                padding: 20px;
+                border-radius: 15px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+                z-index: 10000;
+                max-width: 350px;
+                animation: slideIn 0.5s ease;
+            `;
+            
+            notification.innerHTML = `
+                <div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 8px;">🛒 Carrinho Abandonado</div>
+                <div style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 15px;">New Stylos - Melhor custo-benefício do Brasil!</div>
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="sendCartReminderWhatsApp()" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-weight: 600; flex: 1;">
+                        📱 WhatsApp
+                    </button>
+                    <button onclick="this.parentElement.parentElement.remove()" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 8px 15px; border-radius: 20px; cursor: pointer;">
+                        ✕
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Remover automaticamente após 15 segundos
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.remove();
+                }
+            }, 15000);
+        }
+
+        // Enviar lembrete de carrinho via WhatsApp
+        function sendCartReminderWhatsApp() {
+            let message = '🛒 *Seu carrinho está te esperando!*\n\n';
+            message += '👕 *NEW STYLOS CAMISETAS*\n';
+            message += '🏆 A marca com *MELHOR CUSTO-BENEFÍCIO DO BRASIL*\n\n';
+            message += '✅ Qualidade Premium Viscolycra\n';
+            message += '✅ Preços Justos Direto da Fábrica\n';
+            message += '✅ Atacado a partir de 10 peças\n';
+            message += '✅ Entrega para todo o Brasil\n\n';
+            
+            if (cart.length > 0) {
+                message += '📋 *Produtos no seu carrinho:*\n';
+                cart.forEach((item, index) => {
+                    message += `${index + 1}. ${item.name} - ${item.size} - ${item.color} (${item.quantity}x)\n`;
+                });
+                
+                const total = cart.reduce((sum, item) => sum + item.total, 0);
+                message += `\n💰 Total: R$ ${total.toFixed(2).replace('.', ',')}`;
+                message += '\n🏦 PIX com 5% de desconto disponível!';
+            }
+            
+            message += '\n\n🔥 Não perca essa oportunidade!';
+            message += '\n🌐 Finalize seu pedido: ' + window.location.href;
+            
+            const encodedMessage = encodeURIComponent(message);
+            const whatsappURL = `https://wa.me/${whatsappConfig.number}?text=${encodedMessage}`;
+            
+            window.open(whatsappURL, '_blank');
+            
+            // Remover notificação
+            event.target.closest('div[style*="position: fixed"]').remove();
+        }
+
+        // Verificar se usuário fez pedido recentemente
+        function hasUserMadeOrder() {
+            const lastOrder = localStorage.getItem('lastOrderTime');
+            if (!lastOrder) return false;
+            
+            const timeDiff = Date.now() - parseInt(lastOrder);
+            return timeDiff < 24 * 60 * 60 * 1000; // Menos de 24 horas
+        }
+
+        // Salvar quando usuário faz pedido
+        function markOrderMade() {
+            localStorage.setItem('lastOrderTime', Date.now().toString());
         }
 
         // Atualizar badge do carrinho
@@ -1016,8 +1146,18 @@
                     </div>
                 </div>
                 
+                <div style="background: #fff3cd; border: 2px solid #ffc107; border-radius: 10px; padding: 15px; margin: 15px 0; text-align: center;">
+                    <div style="font-weight: 600; color: #856404; margin-bottom: 5px;">📦 Status do Pedido Atacado</div>
+                    <div style="font-size: 1.1rem; color: #856404;">
+                        <span id="totalPiecesDisplay">${cart.reduce((sum, item) => sum + item.quantity, 0)}</span> de 10 peças mínimas
+                    </div>
+                    <div style="font-size: 0.85rem; color: #6c757d; margin-top: 5px;">
+                        ${cart.reduce((sum, item) => sum + item.quantity, 0) >= 10 ? '✅ Pedido pode ser finalizado!' : `⚠️ Adicione mais ${10 - cart.reduce((sum, item) => sum + item.quantity, 0)} peça(s)`}
+                    </div>
+                </div>
+                
                 <button class="whatsapp-btn" onclick="sendWhatsAppOrder()" id="finalizeBtn" disabled style="opacity: 0.6;">
-                    📱 Finalizar Pedido
+                    📱 Finalizar Pedido Atacado
                 </button>
                 <button class="btn btn-danger" style="width: 100%; margin-top: 10px;" onclick="clearCart()">
                     🗑️ Limpar Carrinho
@@ -1053,10 +1193,17 @@
             document.getElementById('pixPayment').checked = (method === 'pix');
             document.getElementById('cardPayment').checked = (method === 'card');
             
-            // Habilitar botão de finalizar
+            // Habilitar botão de finalizar apenas se tiver 10+ peças
+            const totalPieces = cart.reduce((sum, item) => sum + item.quantity, 0);
             const finalizeBtn = document.getElementById('finalizeBtn');
-            finalizeBtn.disabled = false;
-            finalizeBtn.style.opacity = '1';
+            
+            if (totalPieces >= 10) {
+                finalizeBtn.disabled = false;
+                finalizeBtn.style.opacity = '1';
+            } else {
+                finalizeBtn.disabled = true;
+                finalizeBtn.style.opacity = '0.6';
+            }
             
             // Atualizar visual das opções
             const paymentOptions = document.querySelectorAll('.payment-option');
@@ -1078,6 +1225,13 @@
                 return;
             }
 
+            // Verificar quantidade mínima de 10 peças
+            const totalPieces = cart.reduce((sum, item) => sum + item.quantity, 0);
+            if (totalPieces < 10) {
+                alert(`⚠️ PEDIDO MÍNIMO: 10 PEÇAS\n\nVocê tem ${totalPieces} peça(s) no carrinho.\nAdicione mais ${10 - totalPieces} peça(s) para finalizar o pedido.`);
+                return;
+            }
+
             if (!selectedPaymentMethod) {
                 alert('⚠️ Por favor, selecione uma forma de pagamento!');
                 return;
@@ -1095,7 +1249,8 @@
                 paymentInfo = `💳 *FORMA DE PAGAMENTO: CARTÃO DE CRÉDITO*\n📊 Parcelamento: 3x sem juros de R$ ${(finalTotal/3).toFixed(2).replace('.', ',')}\n💻 Link de pagamento será enviado\n`;
             }
 
-            let message = '🛒 *NOVO PEDIDO - New Stylos Camisetas*\n\n';
+            let message = '🛒 *NOVO PEDIDO ATACADO - New Stylos Camisetas*\n';
+            message += '🏆 *A MARCA COM MELHOR CUSTO-BENEFÍCIO DO BRASIL*\n\n';
             
             cart.forEach((item, index) => {
                 message += `${index + 1}. *${item.name}*\n`;
@@ -1105,7 +1260,9 @@
                 message += `   Valor: R$ ${item.total.toFixed(2).replace('.', ',')}\n\n`;
             });
 
+            const totalPieces = cart.reduce((sum, item) => sum + item.quantity, 0);
             message += `📊 *RESUMO DO PEDIDO:*\n`;
+            message += `Total de Peças: ${totalPieces} unidades\n`;
             message += `Subtotal: R$ ${subtotal.toFixed(2).replace('.', ',')}\n`;
             message += paymentInfo;
             message += `💰 *TOTAL FINAL: R$ ${finalTotal.toFixed(2).replace('.', ',')}*\n\n`;
@@ -1126,6 +1283,9 @@
             const whatsappURL = `https://wa.me/${whatsappConfig.number}?text=${encodedMessage}`;
             
             window.open(whatsappURL, '_blank');
+            
+            // Marcar que o usuário fez um pedido
+            markOrderMade();
             
             // Limpar carrinho após envio
             setTimeout(() => {
@@ -1367,5 +1527,5 @@
             }
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'978edf1695ede638',t:'MTc1NjgzNTY1NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'978f2647f611e638',t:'MTc1NjgzODU3MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
